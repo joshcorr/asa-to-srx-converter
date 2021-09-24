@@ -20,7 +20,7 @@ __author__ = "Josh Corrick"
 __copyright__ = "Copyright 2021, Josh Corrick"
 __credits__ = ["Josh Corrick"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __maintainer__ = "Josh Corrick"
 
 
