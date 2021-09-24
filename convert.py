@@ -341,7 +341,13 @@ addressSet = re.findall(addressSetQuery.pattern, config, re.MULTILINE)
 for addSet in addressSet:
     network = re.findall(r'(?=network-object\s).+[^\n]', addSet[0])
     for net in network:
-        currentNet = net.split(' ')[-1]
+        normal = re.compile('network-object (host|object)')
+        if re.match(normal, net):
+            currentNet = net.split(' ')[-1]
+        else:
+            subnet = net.split(' ')[-2]
+            netmask = net.split(' ')[-1]
+            currentNet = ipaddress.ip_network(f'{subnet}/{netmask}', strict=False)
         addressBookEntry = lookup_address_item(currentNet, addressBook, 'all')
 
         # needed to create an address book entry so Address-Sets can be made if no network-objects exist
@@ -350,6 +356,13 @@ for addSet in addressSet:
             name = f"{zone}_{currentNet}"
             addressBook.append(f'{name}:{currentNet}:{zone}')
             message = f'set security zones security-zone {zone} address-book address {name} {currentNet}/32'
+            output.append(message)
+        elif not addressBookEntry and isinstance(currentNet, IPv4Address):
+            tempNet = currentNet.network_address.compressed
+            zone = lookup_zone(tempNet, interfaces)
+            name = f"{zone}_{tempNet}_net"
+            addressBook.append(f'{name}:{tempNet}:{zone}')
+            message = f'set security zones security-zone {zone} address-book address {name} {currentNet.compressed}'
             output.append(message)
 
 
@@ -537,7 +550,8 @@ for acl in accessList:
         if to_zone == 'UNKNOWN':
             logging.warning(f'No zone found for {currentToAddress}')
     elif group:
-        to_zone = group[0]
+        # this could return a single entry or an array
+        to_zone = group
         if to_zone == 'UNKNOWN':
             logging.warning(f'No zone found for {currentToAddress}')
     else:
