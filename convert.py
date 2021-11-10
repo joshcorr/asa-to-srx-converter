@@ -20,7 +20,7 @@ __author__ = "Josh Corrick"
 __copyright__ = "Copyright 2021, Josh Corrick"
 __credits__ = ["Josh Corrick"]
 __license__ = "MIT"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __maintainer__ = "Josh Corrick"
 
 
@@ -231,7 +231,7 @@ def get_override_from_zone(originalZones, overrideInterfaces, failback_address, 
 logging.info('Creating the banner')
 bannerQuery = re.compile(r'(^banner\s.+\n)')
 banner = re.findall(bannerQuery.pattern, config, re.MULTILINE)
-banInfo = [] # a list to hold the banners
+banInfo = []
 for ban in banner:
     banInfo.append(re.split(r'^banner\s\b(login|asdm)\b\s',ban.rstrip()))
     remove_line_from_config(ban, configRemaining)
@@ -357,7 +357,7 @@ for addSet in addressSet:
             addressBook.append(f'{name}:{currentNet}:{zone}')
             message = f'set security zones security-zone {zone} address-book address {name} {currentNet}/32'
             output.append(message)
-        elif not addressBookEntry and isinstance(currentNet, IPv4Address):
+        elif not addressBookEntry and isinstance(currentNet, IPv4Network):
             tempNet = currentNet.network_address.compressed
             zone = lookup_zone(tempNet, interfaces)
             name = f"{zone}_{tempNet}_net"
@@ -572,6 +572,9 @@ for ace in aclData:
     finalAce = aclData[ace]
     policy_name = '_'.join(
         finalAce['application_name'])+'_'+(finalAce['source_addressbook_name'])
+
+    if len(policy_name) > 63:
+        policy_name = (finalAce['from_zone'])+'_'+(finalAce['source_addressbook_name'])+'_'+(finalAce['destination_addressbook_name'])
 
     # policy start and end should always be the same.
     policy_start = f"""set security policies from-zone {finalAce['from_zone']} to-zone {finalAce['to_zone']} policy {policy_name} match source-address {finalAce['source_addressbook_name']}
